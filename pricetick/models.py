@@ -2,22 +2,24 @@ import calendar
 import datetime
 import csv
 import os
+import StringIO
 
 import arrow
 import requests
+import pytz
 
 from django.db import models
 from django.conf import settings
 
 class PriceTick(models.Model):
     currency = models.CharField(max_length=8) # btc/ltc/doge/etc.
-    exchange = models.CharField(max_length=32)
+    exchange = models.CharField(max_length=128)
     base_fiat = models.CharField(max_length=8) # USD/EUR/GBP/etc
     date = models.DateTimeField(db_index=True)
     price = models.FloatField()
 
     def __unicode__(self):
-        return "%s %s %s" % (self.date, self.price, self.exchange)
+        return "%s %s %s" % (self.date, self.price, self.currency)
 
     @classmethod
     def nearest(self, date):
@@ -31,14 +33,16 @@ class PriceTick(models.Model):
 
 
 def load_btc():
-    # http://api.bitcoincharts.com/v1/csv/
-    f = open(os.path.join(settings.CSV_PATH, "bitstampUSD.csv"))
+    # http://api.bitcoincharts.com/v1/csv/bitstampUSD.csv
+    from os.path import expanduser
+    home = os.path.expanduser("~")
+    f = open(os.path.join(home, "bitstampUSD.csv"))
     for i, line in enumerate(f.readlines()):
         timestamp, price, volume = line.split(",")
-        tick_date = datetime.datetime.fromtimestamp(int(timestamp))
+        tick_date = datetime.datetime.fromtimestamp(int(timestamp)).replace(tzinfo=pytz.UTC)
 
         if i % 300 == 0:
-            PriceTick.objects.create(
+            p = PriceTick.objects.create(
                 currency='BTC',
                 exchange='bitstampUSD',
                 base_fiat='USD',
@@ -46,72 +50,100 @@ def load_btc():
                 price=price,
             )
 
-            print tick_date, price
+            print p
 
 def load_ltc():
     # http://www.quandl.com/TAMMER1/LTCUSD-Litecoin-LTC-vs-US-Dollar-USD-BTC-e
-    with open(os.path.join(settings.CSV_PATH, "TAMMER1-LTCUSD.csv"), 'rb') as f:
-        reader = csv.DictReader(f)
-        for line in reader:
-            tick_date = arrow.get(line['Date']).datetime
-            PriceTick.objects.create(
-                currency='LTC',
-                exchange='btc-e',
-                base_fiat='USD',
-                date=tick_date,
-                price=line['Close'],
-            )
+    url = "http://www.quandl.com/api/v1/datasets/TAMMER1/LTCUSD.csv"
+    response = requests.get(url)
+    reader = csv.DictReader(StringIO.StringIO(response.content))
+    for line in reader:
+        tick_date = arrow.get(line['Date']).datetime
+        p = PriceTick.objects.create(
+            currency='LTC',
+            exchange='btc-e',
+            base_fiat='USD',
+            date=tick_date,
+            price=line['Close'],
+        )
+        print p
 
 
 
 def load_doge():
     # http://www.quandl.com/DOGE/USDCRYPTSY-United-States-Dollar-per-Dogecoin-Cryptsy
-    with open(os.path.join(settings.CSV_PATH, "DOGE-USDCRYPTSY.csv"), 'rb') as f:
-        reader = csv.DictReader(f)
-        for line in reader:
-            tick_date = arrow.get(line['Date']).datetime
-            PriceTick.objects.create(
-                currency='DOGE',
-                exchange='Crypsy',
-                base_fiat='USD',
-                date=tick_date,
-                price=line['Rate'],
-            )
+    url = "http://www.quandl.com/api/v1/datasets/DOGE/USDCRYPTSY.csv"
+    response = requests.get(url)
+    reader = csv.DictReader(StringIO.StringIO(response.content))
+    for line in reader:
+        tick_date = arrow.get(line['Date']).datetime
+        p = PriceTick.objects.create(
+            currency='DOGE',
+            exchange='DOGE/USDCRYPTSY',
+            base_fiat='USD',
+            date=tick_date,
+            price=line['Rate'],
+        )
+        print p
 
 
 def load_vtc():
     # NOTE: you must run the load_btc function first, as this one depends on it
     # http://www.quandl.com/CRYPTOCHART/VTC-VTC-BITCOIN-Exchange-Rate
-    with open(os.path.join(settings.CSV_PATH, "CRYPTOCHART-VTC.csv"), 'rb') as f:
-        reader = csv.DictReader(f)
-        for line in reader:
-            tick_date = arrow.get(line['Date']).datetime
-            btc_price = float(line['Price'])
-            exchange = PriceTick.nearest(tick_date).price
-            PriceTick.objects.create(
-                currency='VTC',
-                exchange='cryptocoincharts.info',
-                base_fiat='USD',
-                date=tick_date,
-                price=btc_price * exchange,
-            )
+    url = "http://www.quandl.com/api/v1/datasets/CRYPTOCHART/VTC.csv"
+    response = requests.get(url)
+    reader = csv.DictReader(StringIO.StringIO(response.content))
+    for line in reader:
+        tick_date = arrow.get(line['Date']).datetime
+        btc_price = float(line['Price'])
+        exchange = PriceTick.nearest(tick_date).price
+        p = PriceTick.objects.create(
+            currency='VTC',
+            exchange='cryptocoincharts.info',
+            base_fiat='USD',
+            date=tick_date,
+            price=btc_price * exchange,
+        )
+        print p
+
 
 def load_ppc():
     # NOTE: you must run the load_btc function first, as this one depends on it
     # http://www.quandl.com/CRYPTOCHART/PPC-PPC-BITCOIN-Exchange-Rate
-    with open(os.path.join(settings.CSV_PATH, "CRYPTOCHART-PPC.csv"), 'rb') as f:
-        reader = csv.DictReader(f)
-        for line in reader:
-            tick_date = arrow.get(line['Date']).datetime
-            btc_price = float(line['Price'])
-            exchange = PriceTick.nearest(tick_date).price
-            PriceTick.objects.create(
-                currency='PPC',
-                exchange='cryptocoincharts.info',
-                base_fiat='USD',
-                date=tick_date,
-                price=btc_price * exchange,
-            )
+    url = "http://www.quandl.com/api/v1/datasets/CRYPTOCHART/PPC.csv"
+    response = requests.get(url)
+    reader = csv.DictReader(StringIO.StringIO(response.content))
+    for line in reader:
+        tick_date = arrow.get(line['Date']).datetime
+        btc_price = float(line['Price'])
+        exchange = PriceTick.nearest(tick_date).price
+        p = PriceTick.objects.create(
+            currency='PPC',
+            exchange='cryptocoincharts.info',
+            base_fiat='USD',
+            date=tick_date,
+            price=btc_price * exchange,
+        )
+        print p
+
+
+def load_nxt():
+    url = "http://www.quandl.com/api/v1/datasets/CRYPTOCHART/NXT.csv"
+    response = requests.get(url)
+    reader = csv.DictReader(StringIO.StringIO(response.content))
+    for line in reader:
+        tick_date = arrow.get(line['Date']).datetime
+        btc_price = float(line['Price'])
+        exchange = PriceTick.nearest(tick_date).price
+        p = PriceTick.objects.create(
+            currency='NXT',
+            exchange='cryptocoincharts.info (via quandl.com)',
+            base_fiat='USD',
+            date=tick_date,
+            price=btc_price * exchange,
+        )
+        print p
+
 
 def load_all():
     load_btc()
@@ -119,6 +151,7 @@ def load_all():
     load_doge()
     load_vtc()
     load_ppc()
+    load_nxt()
 
 def get_ticks():
     """
@@ -130,7 +163,7 @@ def get_ticks():
     response = requests.get(url)
     price = response.json()['data']['amount']
 
-    PriceTick.objects.create(
+    t1 = PriceTick.objects.create(
         currency='Doge',
         exchange='dogeapi',
         base_fiat='USD',
@@ -144,7 +177,7 @@ def get_ticks():
     response = requests.get("https://btc-e.com/api/2/ltc_usd/ticker")
     price = response.json()['ticker']['avg']
 
-    PriceTick.objects.create(
+    t2 = PriceTick.objects.create(
         currency='LTC',
         exchange='btc-e',
         base_fiat='USD',
@@ -158,7 +191,7 @@ def get_ticks():
     response = requests.get("https://www.bitstamp.net/api/ticker/")
     price = response.json()['last']
 
-    PriceTick.objects.create(
+    t3 = PriceTick.objects.create(
         currency='BTC',
         exchange='bitstampUSD',
         base_fiat='USD',
@@ -167,3 +200,7 @@ def get_ticks():
     )
 
     ###########################
+
+    print t1
+    print t2
+    print t3
