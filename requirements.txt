@@ -1,4 +1,4 @@
 requests
 arrow
 pytz
-django=1.6.5
+django==1.6.5
