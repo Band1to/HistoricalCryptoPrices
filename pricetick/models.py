@@ -38,7 +38,7 @@ def load_btc():
     from os.path import expanduser
     home = os.path.expanduser("~")
     f = open(os.path.join(home, "bitstampUSD.csv"))
-    for i, line in enumerate(f.readlines()):
+    for i, line in enumerate(f):
         timestamp, price, volume = line.split(",")
         tick_date = datetime.datetime.fromtimestamp(int(timestamp)).replace(tzinfo=pytz.UTC)
 
