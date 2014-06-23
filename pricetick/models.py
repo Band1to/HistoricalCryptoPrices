@@ -201,6 +201,4 @@ def get_ticks():
 
     ###########################
 
-    print t1
-    print t2
-    print t3
+    return t1, t2, t3
