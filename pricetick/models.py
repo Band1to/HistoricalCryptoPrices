@@ -33,7 +33,8 @@ class PriceTick(models.Model):
 
 
 def load_btc():
-    # http://api.bitcoincharts.com/v1/csv/bitstampUSD.csv
+    # $ cd ~
+    # $ wget http://api.bitcoincharts.com/v1/csv/bitstampUSD.csv.gz | unp
     from os.path import expanduser
     home = os.path.expanduser("~")
     f = open(os.path.join(home, "bitstampUSD.csv"))
@@ -144,6 +145,22 @@ def load_nxt():
         )
         print p
 
+def load_ftc():
+    url = "http://www.quandl.com/api/v1/datasets/CRYPTOCHART/FTC.csv"
+    response = requests.get(url)
+    reader = csv.DictReader(StringIO.StringIO(response.content))
+    for line in reader:
+        tick_date = arrow.get(line['Date']).datetime
+        btc_price = float(line['Price'])
+        exchange = PriceTick.nearest(tick_date).price
+        p = PriceTick.objects.create(
+            currency='FTC',
+            exchange='cryptocoincharts.info (via quandl.com)',
+            base_fiat='USD',
+            date=tick_date,
+            price=btc_price * exchange,
+        )
+        print p
 
 def load_all():
     load_btc()
@@ -152,12 +169,70 @@ def load_all():
     load_vtc()
     load_ppc()
     load_nxt()
+    load_ftc()
 
 def get_ticks():
     """
     Run this function every 10 or so minutes so to keep the PriceTicks table
     fresh.
     """
+    tick_date = datetime.datetime.now()
+    url="http://www.cryptocoincharts.info/v2/api/tradingPair/ftc_usd"
+    response = requests.get(url)
+    price = float(response.json()['price'])
+    best_market = response.json()['best_market']
+    t7 = PriceTick.objects.create(
+        currency='FTC',
+        exchange=best_market,
+        base_fiat='USD',
+        date=tick_date,
+        price=price,
+    )
+
+    ###########################
+
+    tick_date = datetime.datetime.now()
+    url="http://www.cryptocoincharts.info/v2/api/tradingPair/nxt_usd"
+    response = requests.get(url)
+    price = float(response.json()['price'])
+    t6 = PriceTick.objects.create(
+        currency='NXT',
+        exchange='cryptocoincharts.info',
+        base_fiat='USD',
+        date=tick_date,
+        price=price,
+    )
+
+    ###########################
+
+    tick_date = datetime.datetime.now()
+    url="http://www.cryptocoincharts.info/v2/api/tradingPair/ppc_usd"
+    response = requests.get(url)
+    price = float(response.json()['price'])
+    t5 = PriceTick.objects.create(
+        currency='PPC',
+        exchange='cryptocoincharts.info',
+        base_fiat='USD',
+        date=tick_date,
+        price=price,
+    )
+    ###########################
+
+    tick_date = datetime.datetime.now()
+    url="http://www.cryptocoincharts.info/v2/api/tradingPair/vtc_usd"
+    response = requests.get(url)
+    price = float(response.json()['price'])
+
+    t4 = PriceTick.objects.create(
+        currency='VTC',
+        exchange='cryptocoincharts.info',
+        base_fiat='USD',
+        date=tick_date,
+        price=price,
+    )
+
+    ###########################
+
     tick_date = datetime.datetime.now()
     url = "https://www.dogeapi.com/wow/v2/?a=get_current_price&convert_to=USD&amount_doge=1"
     response = requests.get(url)
@@ -201,4 +276,4 @@ def get_ticks():
 
     ###########################
 
-    return t1, t2, t3
+    return t1, t2, t3, t4, t5, t6, t7
