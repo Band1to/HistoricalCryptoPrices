@@ -20,3 +20,16 @@ Currencies supported
 * Peercoin
 * NXT
 * Feathercoin
+
+Usage
+=====
+
+There is an installation of this software running on coinsentry.pw. Currently there is only one endpoin that is working.
+
+http://coinsentry.pw/price_for_date?fiat=usd&crypto=btc&date=2014-06-24T11:48:16.929922
+
+Date must be in iso 8601 format.
+
+Returned is a JSON response with the price and the format: e.g.
+
+    [587.99, "bitstampUSD"]
