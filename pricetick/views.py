@@ -14,5 +14,5 @@ def price_for_date(request):
         currency__iexact=crypto_symbol,
     ).order_by('date')[0]
 
-    j = json.dumps([tick.price, tick.exchange])
+    j = json.dumps([tick.price, tick.exchange, tick.date.isoformat()])
     return HttpResponse(j, content_type="application/json")
