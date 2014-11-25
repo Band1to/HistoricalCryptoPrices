@@ -13,8 +13,8 @@ from django.conf import settings
 
 class PriceTick(models.Model):
     currency = models.CharField(max_length=8) # btc/ltc/doge/etc.
-    exchange = models.CharField(max_length=128)
-    base_fiat = models.CharField(max_length=8) # USD/EUR/GBP/etc
+    exchange = models.CharField(max_length=128) # kraken/bitstamp/etc.
+    base_fiat = models.CharField(max_length=8) # USD/EUR/GBP/etc.
     date = models.DateTimeField(db_index=True)
     price = models.FloatField()
 
