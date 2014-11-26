@@ -21,7 +21,7 @@ class PriceTick(models.Model):
     price = models.FloatField()
 
     def __unicode__(self):
-        return "%s %s %s" % (self.date, self.price, self.currency)
+        return "%s %s %s->%s" % (self.date, self.price, self.currency, self.base_fiat)
 
     @classmethod
     def nearest(self, date):
