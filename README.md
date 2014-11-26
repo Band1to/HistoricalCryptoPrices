@@ -36,7 +36,7 @@ price_for_date
 
 | argument   | description                                                           |
 -------------|------------------------------------------------------------------------
-| date       | Either unix timestamp or ISO 8601, or any format that arrow.get takes. *Required* |
+| date       | Either unix timestamp or ISO 8601, or any format that [arrow.get](http://crsmithdev.com/arrow/#arrow.factory.ArrowFactory.get) takes. *Required* |
 | fiat       | Three letter currency code, e.g. usd, cad, btc, rur, eur. *Required*              |
 | crypto     | Three letter currency code, e.g. btc, ltc, ppc, vtc, doge, drk. *Required*        |
 
