@@ -178,7 +178,7 @@ def get_ticks():
     Run this function every 10 or so minutes so to keep the PriceTicks table
     fresh.
     """
-    getter = CryptoPriceGetter('HistoricalCryptoPrice.pricetick.models.get_ticks')
+    getter = CryptoPriceGetter(useragent='HistoricalCryptoPrice.pricetick.models.get_ticks')
     all_ticks = []
     for fiat in ['usd', 'cad', 'btc', 'rur', 'eur']:
         for crypto in ['btc', 'ltc', 'doge', 'nxt', 'ppc', 'vtc', 'ftc']:
