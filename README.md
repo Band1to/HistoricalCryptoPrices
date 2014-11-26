@@ -27,18 +27,19 @@ Usage
 The primary way to use this software is through a RESTful interface.
 All endpoints (currently only one), *always* returns valid JSON.
 
-There is an installation of this software running on coinsentry.pw.
+There is an installation of this software running on http://crypto-prices.pw.
+It is free for public use, but please be mindful of how much load your application puts on the server.
 
 price_for_date
 --------------
 
---------------------------------------------------------------------------------------
+
 | argument   | description                                                           |
 -------------|------------------------------------------------------------------------
 | date       | Either unix timestamp or ISO 8601, or any format that arrow.get takes. *Required* |
 | fiat       | Three letter currency code, e.g. usd, cad, btc, rur, eur. *Required*              |
 | crypto     | Three letter currency code, e.g. btc, ltc, ppc, vtc, doge, drk. *Required*        |
---------------------------------------------------------------------------------------
+
 
 Response is a two item list. The first item is the price (expressed as a Number),
 the second is the source for the number.
@@ -50,6 +51,12 @@ e.g:
 ```
 
 example invocation: http://crypto-prices.pw/price_for_date?fiat=usd&crypto=btc&date=2014-06-24T11:48:16.929922
+
+Coming Soon
+===========
+
+* Integration with pycryptoprices library for more robust price recording even if a single API gets changed.
+* More currencies.
 
 Donations
 =========
