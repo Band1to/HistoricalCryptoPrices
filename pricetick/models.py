@@ -11,6 +11,8 @@ import pytz
 from django.db import models
 from django.conf import settings
 
+from pycryptoprices import CryptoPriceGetter
+
 class PriceTick(models.Model):
     currency = models.CharField(max_length=8) # btc/ltc/doge/etc.
     exchange = models.CharField(max_length=128) # kraken/bitstamp/etc.
@@ -176,104 +178,19 @@ def get_ticks():
     Run this function every 10 or so minutes so to keep the PriceTicks table
     fresh.
     """
-    tick_date = datetime.datetime.now()
-    url="http://www.cryptocoincharts.info/v2/api/tradingPair/ftc_usd"
-    response = requests.get(url)
-    price = float(response.json()['price'])
-    best_market = response.json()['best_market']
-    t7 = PriceTick.objects.create(
-        currency='FTC',
-        exchange=best_market,
-        base_fiat='USD',
-        date=tick_date,
-        price=price,
-    )
+    getter = CryptoPriceGetter('HistoricalCryptoPrice.pricetick.models.get_ticks')
+    all_ticks = []
+    for fiat in ['usd', 'cad', 'btc', 'rur', 'eur']:
+        for crypto in ['btc', 'ltc', 'doge', 'nxt', 'ppc', 'vtc', 'ftc']:
+            price, market = getter.get_price(fiat, crypto)
+            all_ticks.append(
+                PriceTick.objects.create(
+                    currency=crypto.upper(),
+                    exchange=market,
+                    base_fiat=fiat.upper(),
+                    date=datetime.datetime.now(),
+                    price=price,
+                )
+            )
 
-    ###########################
-
-    tick_date = datetime.datetime.now()
-    url="http://www.cryptocoincharts.info/v2/api/tradingPair/nxt_usd"
-    response = requests.get(url)
-    price = float(response.json()['price'])
-    t6 = PriceTick.objects.create(
-        currency='NXT',
-        exchange='cryptocoincharts.info',
-        base_fiat='USD',
-        date=tick_date,
-        price=price,
-    )
-
-    ###########################
-
-    tick_date = datetime.datetime.now()
-    url="http://www.cryptocoincharts.info/v2/api/tradingPair/ppc_usd"
-    response = requests.get(url)
-    price = float(response.json()['price'])
-    t5 = PriceTick.objects.create(
-        currency='PPC',
-        exchange='cryptocoincharts.info',
-        base_fiat='USD',
-        date=tick_date,
-        price=price,
-    )
-    ###########################
-
-    tick_date = datetime.datetime.now()
-    url="http://www.cryptocoincharts.info/v2/api/tradingPair/vtc_usd"
-    response = requests.get(url)
-    price = float(response.json()['price'])
-
-    t4 = PriceTick.objects.create(
-        currency='VTC',
-        exchange='cryptocoincharts.info',
-        base_fiat='USD',
-        date=tick_date,
-        price=price,
-    )
-
-    ###########################
-
-    tick_date = datetime.datetime.now()
-    url = "https://www.dogeapi.com/wow/v2/?a=get_current_price&convert_to=USD&amount_doge=1"
-    response = requests.get(url)
-    price = response.json()['data']['amount']
-
-    t1 = PriceTick.objects.create(
-        currency='Doge',
-        exchange='dogeapi',
-        base_fiat='USD',
-        date=tick_date,
-        price=price,
-    )
-
-    ###########################
-
-    tick_date = datetime.datetime.now()
-    response = requests.get("https://btc-e.com/api/2/ltc_usd/ticker")
-    price = response.json()['ticker']['avg']
-
-    t2 = PriceTick.objects.create(
-        currency='LTC',
-        exchange='btc-e',
-        base_fiat='USD',
-        date=tick_date,
-        price=price,
-    )
-
-    ###########################
-
-    tick_date = datetime.datetime.now()
-    response = requests.get("https://www.bitstamp.net/api/ticker/")
-    price = response.json()['last']
-
-    t3 = PriceTick.objects.create(
-        currency='BTC',
-        exchange='bitstampUSD',
-        base_fiat='USD',
-        date=tick_date,
-        price=price,
-    )
-
-    ###########################
-
-    return t1, t2, t3, t4, t5, t6, t7
+    return all_ticks
